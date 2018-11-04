@@ -1,0 +1,74 @@
+//belongs to package registration
+package registration;
+
+ 
+public class user implements java.io.Serializable {
+//data fields for first/last name, username and password
+  private String first_name;
+  private String last_name;
+  private String user_name;
+  private String password;
+  
+  // no-arg default constructor
+  user () {
+	  
+  }
+  
+  // constructor for first/last name, username, and password
+  user (String first, String last, String user, String pwd) {
+    first_name = first;
+    last_name = last;
+    
+    // in case the user name is not provided, defaults to last name.
+    if (user.equals(""))
+      user_name = last; 
+    else  
+      user_name = user;
+    
+    // in case the password is not provided, defaults to "password"
+    if (pwd.equals(""))
+      password = "password";
+    else
+      password = pwd;
+  }
+  
+  // getter for first name
+  public String get_first_name() {   
+    return first_name;   
+  }  
+  
+  // setter for first name
+  public void set_first_name(String first_name) {   
+    this.first_name = first_name;   
+  }  
+  
+  // getter for last name
+  public String get_last_name() {   
+    return last_name;   
+  }  
+  
+  // setter for last name
+  public void set_last_name(String last_name) {   
+    this.last_name = last_name;   
+  }  
+  
+  // getter for username
+  public String get_user_name() {   
+    return user_name;   
+  }  
+
+  // setter for username
+  void set_user_name(String user_name) {   
+    this.user_name = user_name;   
+  }  
+  
+  // getter for password
+  public String get_password() {   
+    return password;   
+  }  
+  
+  // setter for password
+  public void set_password(String password) {   
+    this.password = password;   
+  }  
+}
