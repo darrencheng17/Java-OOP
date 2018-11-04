@@ -1,0 +1,1005 @@
+package registration;
+
+import java.io.*; 
+import java.util.*;
+
+// Main class of the registration system 
+public class mclass {
+
+  static ArrayList<course> allCourses = new ArrayList<course>();
+  static ArrayList<student> allStudents = new ArrayList<student>();
+  static ArrayList<admin> allAdmins = new ArrayList<admin>();
+  static admin administrator = null;
+  
+  // main method performs the following task:
+  //  1) If this is the first time running, load the predefined course list
+  //     from the file to the course ArrayList. Create the student Arraylist
+  //     and administrator object. If not the first time, deserialize the
+  //     administrator object, the course object stream and student object
+  //     stream and load them to the relevant object and ArrayList.
+  //  2) Manage the top level user menu providing options for user to
+  //     go to administration menu or student menu.
+  //     Before leading user to the administration menu or student menu, 
+  //     validation is checked with first/last name, user name ans password.
+  //  3) Upon exit of the system, serialize the administrator object, course
+  //     ArrayList and student ArrayList to the drive.
+  public static void main(String[] args) {    
+	
+	Scanner consoleInput = new Scanner(System.in);
+	String first;
+    String last;
+    String userName;
+    String pwd;
+  
+    System.out.printf("Welcome to the Registration System\n");
+    
+    // Check to see if there is an adminitrator record
+    // there and if so, the registration should load the
+    // the information on courses, students and administrator,
+    // from previous registration operation, otherwise load 
+    // the pre-defined course list file.
+    
+    DeSerializeAdmin();
+    
+    if (administrator == null) { 
+    	System.out.printf("deserialization admin fails\n");
+        load_courses(); 
+    }
+    else  {
+      System.out.printf("deserialization admin OK\n");
+      DeSerializeAllStudents();
+	  DeSerializeAllCourses();
+    }
+	  
+    view_courses_all();
+    
+    for (;;)  {
+    
+      int option;
+      
+      // print out the top menu
+      System.out.printf("Please choose the following menu:\n");
+      System.out.printf("1 - Administration menu\n");
+      System.out.printf("2 - Student menu\n");
+      System.out.printf("3 - Exit this program\n");
+      
+      try {
+    	option = consoleInput.nextInt();
+      }
+      catch (InputMismatchException e) {
+      	System.out.printf("integer expected");
+      	continue;
+      }	
+      
+      switch (option) {
+      
+        case 1:
+          
+   		  System.out.printf("Please enter admin's first name\n");		
+   		  first = consoleInput.next();
+   	      System.out.printf("Please enter admin's last name\n");		
+   		  last = consoleInput.next();
+   		  System.out.printf("Please enter admin's user name\n");	
+   		  userName = consoleInput.next();
+   		  System.out.printf("Please enter admin's passwod\n");	
+   		  pwd = consoleInput.next();
+   		 
+   		  // If this is the first time, create the administrator
+   		  // record and serialize it.
+          if (administrator == null)   {
+        	System.out.printf("Welcome the new administrator\n"); 
+    	    administrator = new admin(first, last, userName, pwd);
+          }
+          else  {
+        	
+            if (((administrator.get_first_name().equals(first) &&
+        	   administrator.get_last_name().equals(last)   &&
+        	   administrator.get_user_name().equals(userName) &&
+        	   administrator.get_password().equals(pwd))) == false) {
+        	  System.out.printf("Unauthorized administrator\n");
+        	  break;	   
+            }
+          }
+          
+          admin_menu_general(); 	
+          break;
+          
+        case 2:
+
+		  System.out.printf("Please enter student's first name\n");		
+		  first = consoleInput.next();
+	      System.out.printf("Please enter student's last name\n");		
+		  last = consoleInput.next();
+   		  System.out.printf("Please enter student's user name\n");	
+   		  userName = consoleInput.next();
+   		  System.out.printf("Please enter student's password\n");	
+   		  pwd = consoleInput.next();
+          
+		  student stu = searchStudentByNames(first, last); 
+          if (stu == null) 
+        	 System.out.printf("This student is not in the system\n"); 
+          else
+            if ((stu.get_user_name().equals(userName) && 
+            	 stu.get_password().equals(pwd)) == false)    {
+            	System.out.printf("Incorrect user name or/and password\n");
+            }
+            else
+        	 student_menu(stu); 
+          
+          break;
+          
+        case 3:
+        	consoleInput.close();
+        	SerializeAllCourses();
+        	SerializeAllStudents();
+        	SerializeAdmin();
+        	System.out.printf("Thank you for using the registration system - Goodbye\n");
+            System.exit(0); 
+            
+        default:
+          System.out.printf("invalid option\n");
+      } 
+    } 	
+  } 
+  
+  // This method runs only once at the first time in order to
+  // read from the course list file and load to the Course ArrayList.
+  public static void load_courses() /*throws FileNotFoundException*/ {
+	
+	Scanner input;
+	
+	try {
+	  java.io.File file = new File("MyUniversityCourses.csv");
+	  input = new Scanner(file).useDelimiter(",");
+	}
+	catch (FileNotFoundException e) {
+	  System.out.printf("data file not found");
+	  return;
+	}
+	
+	String course_name;
+	String course_id;
+	int max;
+	int current;
+	String list;
+	String professor;
+	int section;
+	String location;
+	String dummy;
+	
+	// read and throw away the data file heading
+    dummy = input.nextLine();
+	
+    while (input.hasNext()) {
+	  
+      course_name = input.next();
+      course_id = input.next();
+      max = input.nextInt();
+      current = input.nextInt();
+      list = input.next();
+      professor = input.next();
+      section = input.nextInt();
+        
+      //last item is followed by end-of-line
+      // so need to use nextLine but also get
+      // rid of the preceding comma.
+      location = input.nextLine();
+      location = location.substring(1);
+      
+      course c = new course(course_name, course_id, current, max, professor, section, location);
+      allCourses.add(c);
+    }
+  
+   //System.out.println(allCourses.size());
+	input.close();
+  }
+  
+  // This method managers the student menu. When done with this menu,
+  // it goes back to the top menu. Prior entering, the validation of 
+  // the student is done.
+  public static void student_menu (student stu) {
+	  
+    Scanner StudentInput = new Scanner(System.in);
+		
+	for (;;)  {
+	        
+	  int option; 
+	  String course_name;
+	  int course_section;
+	  course c;
+	  String dummy;
+	  
+	  // print out the top menu
+	  System.out.printf("Please choose the following action:\n");
+	  System.out.printf("1 - View all courses that are available\n");
+	  System.out.printf("2 - View all courses that area not FULL\n");
+	  System.out.printf("3 - Register on a course\n");
+	  System.out.printf("4 - Withdraw from a course\n");
+	  System.out.printf("5 - View all courses that the current student is being registered in\n");
+	  System.out.printf("6 - Exit from this menu\n");
+	        
+	  try {
+	    option = StudentInput.nextInt();
+	  }
+	  catch (InputMismatchException e) {
+	    System.out.printf("integer expected");
+	  	continue;
+      }	
+	        
+	  switch (option) {
+	    
+	    // view all available courses
+	    case 1:
+	      view_courses_all();
+	      break;
+	    
+	    // view all classes not full  
+	    case 2:
+	      view_courses_not_full();
+	      break;
+	    
+	    // register on a course
+	    case 3:
+	      dummy = StudentInput.nextLine(); // flush the buffer
+		  System.out.printf("Please enter the course name\n");		
+		  course_name = StudentInput.nextLine();
+		  
+		  System.out.printf("Please enter the course section\n");		
+		  try {
+			course_section = StudentInput.nextInt();  
+		  }
+		  catch (InputMismatchException e) {
+			System.out.printf("Invalid course section\n");
+			break;
+		  }
+		 
+		  c = searchCourseByNameAndSection(course_name, course_section);
+		  if (c == null) {
+			System.out.printf("This course does not exist\n");
+			break;
+		  }
+		  
+		  if (c.getCourseMax() == c.getCourseCurrent()) {
+			System.out.printf("This course/section is full\n");
+		    break;
+		  }
+		  
+		  // add the course to this student's course list.
+		  stu.student_add_course(c);
+		  
+		  // add this student to this course's students' list.
+		  c.course_add_student(stu);
+		  
+		  break;
+		
+		// withdraw a course  
+	    case 4:
+	      dummy = StudentInput.nextLine(); // flush the buffer	
+		  System.out.printf("Please enter the course name\n");		
+		  course_name = StudentInput.nextLine();
+		  System.out.printf("Please enter the course section\n");		
+		  try {
+		    course_section = StudentInput.nextInt();  
+		  }
+		  catch (InputMismatchException e) {
+		    System.out.printf("Invalid course section\n");
+		 	break;
+		  }
+			 
+		  c = searchCourseByNameAndSection(course_name, course_section);
+		  if (c == null) {
+			System.out.printf("This course does not exist\n");
+			break;
+		  }
+		  
+		  // remove the course from this student's course list.
+		  stu.student_drop_course(c);
+			  
+	      // remove this student from this course's students' list.
+		  c.course_drop_student(stu);
+	      
+		  break;
+	    
+		// view all courses this student registered
+	    case 5:
+	    	
+	      stu.disp_courses_for_a_student();
+	      break;
+	      
+	    case 6:
+	      //StudentInput.close();
+	      return;
+	          
+	    default:
+	    System.out.printf("invalid option\n");
+	    }  
+     }  	    
+  }
+  
+  // This is the admin menu at the top, from here the control goes to the 
+  // management menu, the report menu, or return to the general menu. Prior
+  // to entering, the administrator's credential is validated.
+  public static void admin_menu_general() {
+	
+    Scanner AdminInput = new Scanner(System.in);
+	
+    for (;;)  {
+        
+      int option;
+        
+      // print out the top menu
+      System.out.printf("Please choose the following menu:\n");
+      System.out.printf("1 - Administration management menu\n");
+      System.out.printf("2 - Administration report menu\n");
+      System.out.printf("3 - Return to the top menu\n");
+        
+      try {
+        option = AdminInput.nextInt();
+      }
+      catch (InputMismatchException e) {
+         System.out.printf("integer expected");
+        	continue;
+      }	
+        
+      switch (option) {
+        
+        // Go to admin's management menu
+        case 1:
+          admin_menu_manage(); 	
+          break;
+        
+        // Go to admin's report menu
+        case 2:
+          admin_menu_report(); 
+          break;
+        
+        // Done with this menu
+        case 3:
+          //AdminInput.close();
+          return;
+          
+        default:
+          System.out.printf("invalid option\n");
+      }  
+    }  
+  }
+  
+  // This is the manage menu for administration. When done, the control
+  // goes back to the administration's top menu.
+  public static void admin_menu_manage() {
+	  
+	Scanner ManageInput = new Scanner(System.in);
+    String name;
+    String id;
+    int max;
+    String professor;
+    int section;
+    String location;
+    course c;
+	String dummy;
+		
+	for (;;)  {
+	        
+	  int option;
+	        
+	  // print out the menu for course registration 
+	  System.out.printf("Please choose the following action:\n");
+	  System.out.printf("1 - Create a new course\n");
+	  System.out.printf("2 - Delete a course\n");
+	  System.out.printf("3 - Edit a course\n");
+	  System.out.printf("4 - Display information for a given couse\n");
+	  System.out.printf("5 - Register a student\n");
+	  System.out.printf("6 - Exit from this menu\n");
+	  
+	  try {
+	    option = ManageInput.nextInt();
+	  }
+	  catch (InputMismatchException e) {
+	    System.out.printf("integer expected");
+	   	continue;
+      }	
+	        
+      switch (option) {
+	    
+        // Create a course
+	    case 1:
+
+		  System.out.printf("Please enter the course name\n");		
+		  dummy = ManageInput.nextLine(); // flush the buffer
+	      name = ManageInput.nextLine(); 
+	      System.out.printf("Please enter the course section\n");
+	    //  dummy = ManageInput.nextLine(); // flush the buffer
+	      try {
+	    	section = ManageInput.nextInt();
+	      }
+	      catch (InputMismatchException e) {
+	    	System.out.printf("Course Section is an integer\n");
+	    	break;
+	      }
+	      
+	      c = searchCourseByNameAndSection(name, section);
+	      if (c != null) {
+	    	System.out.printf("Course already exists\n");
+	    	break;
+	      }
+	      
+	      System.out.printf("Please enter the max enrollment allowed\n");
+	      try {
+		    	max = ManageInput.nextInt();
+		      }
+		      catch (InputMismatchException e) {
+		    	System.out.printf("Max enrollment is an integer\n");
+		    	break;
+		      }
+	      
+		  System.out.printf("Please enter the professor name\n");	
+		  dummy = ManageInput.nextLine(); // flush the buffer
+	      professor = ManageInput.nextLine();
+	      
+		  System.out.printf("Please enter the course location\n");		
+	      location = ManageInput.next();
+	      
+		  System.out.printf("Please enter the course ID\n");		
+	      id = ManageInput.next();
+	      
+	      c = new course(name, id, 0, max, professor, section, location);
+	      allCourses.add(c);
+	      
+	      break;
+	      
+	    // Delete a course        
+	    case 2:
+		  System.out.printf("Please enter the course name\n");		
+		  dummy = ManageInput.nextLine(); // flush the buffer
+		  name = ManageInput.nextLine();
+		  System.out.printf("Please enter the course section\n");
+		  try {
+		    section = ManageInput.nextInt();
+		  }
+		  catch (InputMismatchException e) {
+		    System.out.printf("Course Section is an integer\n");
+		   	break;
+	      }
+		      
+	      c = searchCourseByNameAndSection(name, section);
+		  if (c == null) {
+		    System.out.printf("Course does not exist\n");
+		    break;
+		  }
+		  
+		  allCourses.remove(c);
+		  System.out.printf("course removed\n");
+		  
+	      break;
+	    
+	    // Edit a course  
+	    case 3:
+		  System.out.printf("Please enter the course name\n");		
+		  dummy = ManageInput.nextLine(); // flush the buffer
+		  name = ManageInput.nextLine();
+		  System.out.printf("Please enter the course section\n");
+		  try {
+		   section = ManageInput.nextInt();
+		  }
+		  catch (InputMismatchException e) {
+		    System.out.printf("Course Section is an integer\n");
+		 	break;
+	      }
+			      
+		  c = searchCourseByNameAndSection(name, section);
+	      if (c == null) {
+		    System.out.printf("Course does not exist\n");
+	        break;
+		  }
+	
+		  System.out.printf("Please enter the current or a new name for the course\n");		
+		  dummy = ManageInput.nextLine(); // flush the buffer
+		  name = ManageInput.nextLine();
+	      
+		  System.out.printf("Please enter the current or a new course ID for the course\n");		
+		  id = ManageInput.next();
+	      
+		  System.out.printf("Please enter the current or a new professor for the course\n");		
+		  dummy = ManageInput.nextLine(); // flush the buffer
+		  professor = ManageInput.nextLine();
+		  
+		  if (c.getCourseName().equals(name) == false)
+		    c.setCourseName(name);
+		  
+		  if (c.getCourseId().equals(id) == false)
+			c.setCourseId(id);
+		  
+		  if (c.getProfessor().equals(professor) == false) 
+			c.setProfessor(professor);
+		  
+		  break;
+		
+		// Display a specific course information.  
+		case 4:
+		  String course_id; 
+		  System.out.printf("Please enter the Course ID\n");
+		  course_id = ManageInput.next(); 
+		 
+		  view_a_course(course_id);  
+		  break;
+		
+		// Register a student
+		case 5:
+		  String first;
+		  String last;
+		  String user;
+		  String pwd;
+		  student stu;
+		  
+		  System.out.printf("Please enter student's first name\n");		
+	      first = ManageInput.next();
+		  System.out.printf("Please enter student's last name\n");		
+	      last = ManageInput.next();
+		  System.out.printf("Please enter student's user name\n");	
+		  
+		  stu = searchStudentByNames(first, last);
+		  if (stu != null) {
+			 System.out.printf("Student already registered\n");
+			 break;
+		  }
+		  
+	      user = ManageInput.next();
+		  System.out.printf("Please enter student's password\n");		
+	      pwd = ManageInput.next();
+		  stu = new student(first, last, user, pwd); 
+		  allStudents.add(stu); 
+		  
+		  break;
+		
+		// Done with this menu 
+	    case 6:
+	      return;
+	          
+	    default:
+	      System.out.printf("invalid option\n");
+      }  
+	}	  
+  }
+  
+  // This is the report menu for administration. When done, the control
+  // goes back to administration's top menu.
+  public static void admin_menu_report() {
+	
+	Scanner ReportInput = new Scanner(System.in);
+	student stu;
+	course c;
+	String cname;
+	int section; 
+	String last;
+	String first;
+	String dummy;
+		
+	for (;;)  {
+		        
+	  int option;
+		        
+	  // print out the menu
+      System.out.printf("Please choose the following action:\n");
+      System.out.printf("1 - View courses\n");
+	  System.out.printf("2 - View courses that are FULL\n");
+      System.out.printf("3 - Write to a file the list of courses that are FULL\n");
+	  System.out.printf("4 - View the names of the students being registered in a specific course\n");
+	  System.out.printf("5 - View the list of courses that a given student is being registered on\n");
+	  System.out.printf("6 - Sort courses based on the current nuber of students registered\n");
+	  System.out.printf("7 - Exit from this menu");
+		  
+	  try {
+	    option = ReportInput.nextInt();
+	  }
+	  catch (InputMismatchException e) {
+	    System.out.printf("integer expected");
+	  	continue;
+      }	
+		        
+	  switch (option) {
+		
+	    // View all coureses
+	    case 1:
+	      view_courses_all();	
+		  break;
+		  
+		// View all courses that are full             
+	    case 2:
+	      view_courses_not_full();
+	      break;
+	      
+		// Write to a file with all courses that are full 
+	    case 3:
+		  
+	      createCoursesFullFile();
+	      break;
+	      
+	    // View all students registered with a specific course
+	    case 4:
+	     
+	      System.out.printf("Please enter the course name\n");
+	      dummy = ReportInput.nextLine(); // flush the buffer
+	      cname = ReportInput.nextLine();
+	      System.out.printf("Please enter the course section\n");
+	      
+		  try {
+		   section = ReportInput.nextInt();
+		  }
+		  catch (InputMismatchException e) {
+		    System.out.printf("Course Section is an integer\n");
+		 	break;
+	      }
+			      
+		  c = searchCourseByNameAndSection(cname, section);
+		  
+		  if (c == null) 
+			System.out.printf("No such course in the system\n");
+		  else
+	    	c.disp_students_in_a_course();
+	    	
+	      break;
+	      
+		// View all courses registered by a specific student	            
+		case 5:
+		  
+		  System.out.printf("Please enter the student's first name\n");
+		  first = ReportInput.next();
+		  System.out.printf("Please enter the student's last name\n");
+		  last = ReportInput.next();
+		  
+		  stu = searchStudentByNames(first, last);
+		  if (stu == null)
+			System.out.printf("No such student in the system\n");
+		  else
+			stu.disp_courses_for_a_student();
+		  break;	      
+		
+		// Sort the course list in descending order of enrollment.
+	    case 6:
+	      sortCourseListbyEnrollment();
+	      break;
+	      
+		case 7:
+		  //ReportInput.close();	
+		  return;
+		          
+        default:
+	      System.out.printf("invalid option\n");	    
+	  }
+   }
+ }
+  
+  // This method displays all courses including
+  // course name, ID, number of students registered 
+  // and maximum number allowed.
+  public static void view_courses_all () {
+	
+	System.out.printf("\nAll courses offered are as follows:\n");
+    for (int ix = 0; ix < allCourses.size(); ix++) {
+	  course c = allCourses.get(ix);
+	  System.out.printf("%3d: %-43s %-13s section=%2d enrolled=%4d max=%4d\n",
+	    ix + 1,c.getCourseName(), c.getCourseId(), c.getCourseSection() ,c.getCourseCurrent(), c.getCourseMax());
+	}  
+  }
+  
+  // This method displays all courses that are full.
+  public static void view_courses_full () {
+	
+	System.out.printf("\nAll courses offered but full are as follows:\n");  
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	  course c = allCourses.get(ix);
+	  if (c.getCourseCurrent() == c.getCourseMax())
+    	System.out.printf("%3d: %-43s %-13s section=%2d enrolled=%2d max=%2d\n",
+	    ix + 1,c.getCourseName(), c.getCourseId(), c.getCourseSection(), 
+	    c.getCourseCurrent(), c.getCourseMax());
+	}  	  
+  }
+  
+  // This method displays all courses that are NOT full.
+  public static void view_courses_not_full () {
+	
+	System.out.printf("\nAll courses offered and not full as follows:\n");  
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	  course c = allCourses.get(ix);
+	  if (c.getCourseCurrent() < c.getCourseMax())
+	    System.out.printf("%3d: %-43s %-13s section=%2d enrolled=%2d max=%2d\n",
+	    ix + 1,c.getCourseName(), c.getCourseId(), c.getCourseSection(), 
+	    c.getCourseCurrent(), c.getCourseMax());
+	}  	  
+  } 
+  
+  // This method displays all information of a specific course ID.
+  // Note - there may be multiple sections for the same course ID
+  public static void view_a_course (String course_id) {
+	  
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	 
+	  course c = allCourses.get(ix);
+	  
+	  if (c.getCourseId().equals(course_id)) {
+		    
+        System.out.printf("%-43s %-13s %2d %2d %-20s %2d  %-20s\n", 
+          c.getCourseName(), c.getCourseId(),	  
+          c.getCourseMax(), c.getCourseCurrent(),
+	      c.getProfessor(), c.getCourseSection(),
+	      c.getCourseLocation());
+	  } 
+	}  
+  } 
+  
+  // This method returns the course record with matching course_id
+  // AND course_section, or null otherwise.
+  public static course searchCourseByNameAndSection(String name, int section) {
+	
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	  course c = allCourses.get(ix);
+	  
+	  if (c.getCourseName().equals(name) & c.getCourseSection() == section) 
+		return c;  
+	}  
+	return null;  
+  } 
+  
+  // This method returns the student record with matching first
+  // and last name, or null otherwise.
+  public static student searchStudentByNames(String first, String last) {
+  
+	for (int ix = 0; ix < allStudents.size(); ix++) {
+	  student s = allStudents.get(ix);
+	  
+	  if (s.get_first_name().equals(first) & s.get_last_name().equals(last)) 
+		return s;  
+	}  
+	return null; 
+  } 
+  
+  // This method create a file that contains courses that are currently
+  // full with the registration. For each course it contains the course
+  // name, course ID and course section.
+  // Note: It is the administration's responsibility to remove the 
+  // old file named "CoursesFull.txt" prior to create an updated file.
+  public static void createCoursesFullFile() {
+	  
+    File course_full_file = new File("CoursesFull.txt");
+    if (course_full_file.exists()) {
+      System.out.printf("File already exists\n");
+      return;
+    }
+    PrintWriter output; 
+    
+    try {
+      output = new PrintWriter(course_full_file); 
+    }
+    catch (FileNotFoundException e) {
+      System.out.printf("File not found\n");
+      return;
+    }
+    
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	 
+	  course c = allCourses.get(ix);
+	  if (c.getCourseCurrent() == c.getCourseMax())  {
+		  
+	      output.print(c.getCourseName() + " " + c.getCourseId() + " ");
+	      output.println(c.getCourseSection());
+	  }
+	}  	  
+	
+	output.close(); 
+  }
+  
+  // This method sorts the course ArrayList in descending order based
+  // on current student enrollment.
+  public static void sortCourseListbyEnrollment() {
+	Collections.sort(allCourses);
+  }
+   
+  // This method serializes the allCourses ArrayList.
+  public static void SerializeAllCourses() {
+	FileOutputStream fos = null;
+	ObjectOutputStream oos = null;
+		
+	try {
+	  //FileOutput Stream writes data to a file
+	  fos = new FileOutputStream("allCourses.ser");
+	  oos = new ObjectOutputStream(fos);				
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	  return;
+	}
+	for (int ix = 0; ix < allCourses.size(); ix++) {
+	
+	  //Writes the specific object to the OOS	
+	  course c = allCourses.get(ix);
+	  try {
+        oos.writeObject(c);
+	  }
+	  catch (IOException ioe) {
+		ioe.printStackTrace();
+	  }
+	}  
+	
+	//Close both streams
+	try {
+	  oos.close();
+	  fos.close();
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	}
+	System.out.printf("Serialization on Course List Complete\n");
+  }
+
+  // This method serializes the allStudents ArrayList.
+  public static void SerializeAllStudents() {
+	FileOutputStream fos = null;
+	ObjectOutputStream oos = null;
+		
+	try {
+	  //FileOutput Stream writes data to a file
+	  fos = new FileOutputStream("allStudents.ser");
+	  oos = new ObjectOutputStream(fos);				
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	  return;
+	}
+	for (int ix = 0; ix < allStudents.size(); ix++) {
+	
+	  //Writes the specific object to the OOS	
+	  student s = allStudents.get(ix);
+	  try {
+        oos.writeObject(s);
+	  }
+	  catch (IOException ioe) {
+		ioe.printStackTrace();
+	  }
+	}  
+	
+	//Close both streams
+	try {
+	  oos.close();
+	  fos.close();
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	}
+	System.out.printf("Serialization on Students List Complete\n");
+  }
+  
+  // This method serializes the Administrator object
+  public static void SerializeAdmin() {
+	
+	try {
+	  //FileOutput Stream writes data to a file
+	  FileOutputStream fos = new FileOutputStream("Administration.ser");
+      
+	  //ObjectOutputStream writes objects to a stream (A sequence of data)
+	  ObjectOutputStream oos = new ObjectOutputStream(fos);		
+	  
+	  //Writes the admin object to the OOS
+	  oos.writeObject(administrator);
+	  
+	  // close both streams
+	  oos.close();
+	  fos.close();
+	  System.out.printf("Serialization on Administrator Complete\n");
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	  return;
+	}
+  }
+ 
+ // This method deserializes the courses file and add to the ArrayList.
+ public static void DeSerializeAllCourses() {
+	FileInputStream fis = null;
+	ObjectInputStream ois = null;
+	course c;
+	
+	try {
+	  //FileOutput Stream writes data to a file
+	  fis = new FileInputStream("allCourses.ser");
+	  ois = new ObjectInputStream(fis);				
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	  return;
+	}
+	
+	try {
+	  while ((c = (course)ois.readObject()) != null)    
+        allCourses.add(c);
+	}  
+	catch (ClassNotFoundException e1) {
+	  return;
+	}
+	catch (IOException e2) {
+		  return;
+	}
+	
+	//Close both streams
+	try {
+	  ois.close();
+	  fis.close();
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	}
+	
+	System.out.printf("DeSerialization on Course List Complete\n");
+ }
+
+ // This method deserializes the student file and add to the ArrayList.
+ public static void DeSerializeAllStudents() {
+	FileInputStream fis = null;
+	ObjectInputStream ois = null;
+	student s;
+	
+	try {
+	  //FileOutput Stream writes data to a file
+	  fis = new FileInputStream("allStudents.ser");
+	  ois = new ObjectInputStream(fis);				
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	  return;
+	}
+	
+	try {
+	  while ((s = (student)ois.readObject()) != null)    
+        allStudents.add(s);
+	}  
+	catch (ClassNotFoundException e1) {
+	  return;
+	}
+	catch (IOException e2) {
+		  return;
+	}
+	
+	//Close both streams
+	try {
+	  ois.close();
+	  fis.close();
+	}
+	catch (IOException ioe) {
+	  ioe.printStackTrace();
+	}
+	
+	System.out.printf("DeSerialization on Student List Complete\n");
+ }
+ 
+ // This method deserializes the administrator file.
+ public static void DeSerializeAdmin() {
+
+	try {
+	  // FileInputSystem recieves bytes from a file	
+	  FileInputStream fis = new FileInputStream("Administration.ser"); 
+	  
+	  // ObjectInputStream does the deserilization
+	  ObjectInputStream ois = new ObjectInputStream(fis);	
+	  
+	  // Reconstruct the admin object
+	  administrator = (admin)ois.readObject();   
+	  
+	  // Close both streams
+	  ois.close();
+	  fis.close();
+	}	
+	catch (FileNotFoundException e2) {
+		  System.out.printf("Admin Serialized File not found\n"); 
+		  return;	
+	}
+    catch (IOException e1) {
+      e1.printStackTrace(); 
+      return;
+    }
+	catch (ClassNotFoundException e3) {
+	  e3.printStackTrace(); 
+	  return;
+	}
+
+	System.out.println("DeSerialization on Admin Complete\n"); 
+ } 
+}// end of mclass
