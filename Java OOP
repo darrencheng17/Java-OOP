@@ -1,0 +1,23 @@
+//belongs to the package registration
+package registration;
+
+
+//interface defined for class admininstrator 
+interface admin_itf {
+	  
+public abstract void absmethod ();
+}
+
+//class admin
+public class admin extends user implements admin_itf, java.io.Serializable {
+
+// constructor for first/last name, user, and password
+admin (String first, String last, String user, String pwd) {
+ super (first, last, user, pwd);  
+}
+
+// Abstract Method
+public void absmethod() {
+	System.out.printf("Abstract Hello World \n");  
+}
+}
