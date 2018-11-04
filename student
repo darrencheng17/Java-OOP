@@ -1,0 +1,54 @@
+package registration;
+
+import java.util.ArrayList;
+
+// interface defined for class student
+interface student_itf {
+  
+  public abstract void student_add_course (course c);
+  
+  public abstract void student_drop_course (course c);
+  
+  public abstract void disp_courses_for_a_student(); 
+}
+
+// class student
+public class student extends user implements student_itf, java.io.Serializable {
+  
+  ArrayList<course> courses;
+  
+  // constructor for first name, last name, username, and password
+  student (String first, String last, String user, String pwd) {
+	super (first, last, user, pwd);  
+	courses = new ArrayList<course>();
+  }
+  
+  // This method displays all courses a given student registered.
+  public void disp_courses_for_a_student() {
+	  
+	for (int ix = 0; ix < courses.size(); ix++) {
+	  course c = courses.get(ix);
+	  System.out.printf("Course %d: %s, section %d\n",
+			  ix, c.getCourseName(), c.getCourseSection());
+	}  
+  }
+  
+  // This method registers a course for a student
+  public void student_add_course (course c) {
+	courses.add(c);  
+  }
+  
+  // This method drops a course for a student
+  public void student_drop_course (course c) {
+	
+	for (int ix = 0; ix < courses.size(); ix++)  {
+	  course the_course = courses.get(ix);
+	  if (the_course.getCourseName().equals(c.getCourseName()) &&
+		  the_course.getCourseSection() == c.getCourseSection())  {
+		  
+    	if (courses.remove(the_course) == false)   
+	      System.out.println("Student cannot drop a course");
+	  }
+	} 
+  }
+}
