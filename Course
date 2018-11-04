@@ -1,0 +1,136 @@
+//belongs to package registration
+package registration;
+//importing arraylists
+import java.util.ArrayList;
+
+
+public class course implements Comparable<course>, java.io.Serializable {
+  //defining 
+  private String course_name;
+  private String course_id;
+  private int max_enroll;
+  private int current_enroll;
+  private String course_professor;
+  private int course_section;
+  private String course_location;
+  ArrayList<student> students;
+  
+  // Constructor for names, iDs, current classes, professors, sections, and locations as well 
+  course(String name, String id, int current, int max, String professor, int section, String location) {
+	course_name = name;
+	course_id = id;
+	current_enroll = current;
+	max_enroll = max;
+	course_professor = professor;
+	course_section = section;
+	course_location = location;
+	students = new ArrayList<student>();  
+  }
+  
+  // Getter for coursenames
+  public String getCourseName() {
+	return course_name;
+  }
+  //Setter for Coursenames
+  public void setCourseName(String course_name) {
+	this.course_name = course_name;
+  }
+  
+  // Getter for courseiDs
+  public String getCourseId() {
+	return course_id;
+  }
+  
+  //Setter for coursenames
+  public void setCourseId(String course_id) {
+	this.course_id = course_id;
+  }
+
+  // Getter for coursemaxes
+  public int getCourseMax() {
+	return max_enroll;
+  }
+  
+  //Setter for coursemaxes
+  public void setCourseMax(int max) {
+	max_enroll = max;
+  }
+ 
+  // Getter for current courses
+  public int getCourseCurrent() {
+	return current_enroll;
+  }
+  
+  //setter for current courses
+  public void setCourseCurrent(int current) {
+	current_enroll = current;
+  }
+  
+  // Getter for Professors
+  public String getProfessor() {
+	return course_professor;
+  }
+	
+  //Setter for Professors 
+  public void setProfessor(String professor) {
+	course_professor = professor;
+  }
+
+  // Getter for course sections
+  public int getCourseSection() {
+	  //System.out.printf("%d\n", course_section);
+	return course_section;
+  }
+  
+  //Setter for course sections
+  public void setCourseSection(int section) {
+	course_section = section;
+  }
+  
+  // Getter for course locations 
+  public String getCourseLocation() {
+	return course_location;
+  }
+	  
+  //Setter for locations 
+  public void setCourseLocation(String location) {
+	course_location = location;
+  }
+  
+  // add a specific student to the course's list
+  public void course_add_student (student s) {
+	students.add(s);
+  }	  
+	  
+  // add a specific student to the course's list
+  public void course_drop_student (student s) {
+	
+	for (int ix = 0; ix < students.size(); ix++) {
+	   student stu = students.get(ix);
+	   if (stu.get_first_name().equals(s.get_first_name())  &&
+		   stu.get_last_name().equals(s.get_last_name()))  {
+		   
+	     if (students.remove(stu) == false)
+           System.out.println("Cannot Remove a Student from a course list");
+	   }
+	}
+  }	  
+  
+  // This method displays all students enrolled in a given course
+  public void disp_students_in_a_course() {
+		
+	for (int ix = 0; ix < students.size(); ix++) {
+	  student stu = students.get(ix);
+	  System.out.printf("%-20s\n", stu.get_last_name() + ", " + stu.get_first_name()); 
+	}  
+  }
+  
+  // This method overrides "comparTo" and sort the course list
+  // on descending order of the current students' enrollment. 
+  @Override 
+  public int compareTo (course compareCourse) {
+	  
+	int compareCourseCurrentEnroll = compareCourse.getCourseCurrent();   
+	return compareCourseCurrentEnroll-this.current_enroll;   
+  }
+}
